@@ -16,6 +16,10 @@ import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { AppServerClient } from "./appServer/client";
 import { preflight } from "./preflight";
+import {
+  MANAGED_CODEX_RELEASE,
+  ManagedCodexRuntime,
+} from "./managedCodex";
 import { Store } from "./store";
 import { Orchestrator } from "./orchestrator";
 import { TerminalHost } from "./terminal";
@@ -39,6 +43,7 @@ import {
   type DiffSideView,
   type NewThreadOptions,
   type NotifyMode,
+  type PreflightState,
   type RequestAnswer,
   type ReviewTarget,
 } from "../shared/ipc";
@@ -115,6 +120,8 @@ let store: Store;
 let orch: Orchestrator;
 let terminals: TerminalHost;
 let files: LocalFileSystem;
+let managedRuntime: ManagedCodexRuntime;
+let bootPromise: Promise<void> | null = null;
 let stopAutoUpdates: (() => void) | null = null;
 let servicesStopped = false;
 let installingUpdate = false;
@@ -261,6 +268,13 @@ function notify(title: string, body: string, threadId?: string): void {
 
 /** Focus prompt capture, or create it if absent. */
 function openPromptCapture(): void {
+  if (orch.preflight.kind !== "ready") {
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+    return;
+  }
   const requested = { kind: "promptCapture" } as const;
   const existing = [...extraWindows.values()].find((candidate) =>
     reusesExistingWindow(candidate.role, requested),
@@ -381,12 +395,29 @@ function configureAutoUpdates(): void {
   });
 }
 
-async function boot(): Promise<void> {
-  orch.preflight = await preflight();
+function setPreflight(state: PreflightState): void {
+  orch.preflight = state;
   emit({ type: "preflight", state: orch.preflight });
+}
+
+async function boot(): Promise<void> {
+  if (client) return;
+  if (!bootPromise) {
+    bootPromise = startAppServer().finally(() => {
+      bootPromise = null;
+    });
+  }
+  await bootPromise;
+}
+
+async function startAppServer(): Promise<void> {
+  setPreflight(await preflight(managedRuntime));
   if (orch.preflight.kind !== "ready") return;
 
-  client = new AppServerClient((ev) => orch.handleEvent(ev));
+  client = new AppServerClient(
+    (ev) => orch.handleEvent(ev),
+    managedRuntime.executable,
+  );
   client.onThreadName = (threadId, name) => {
     const t = orch.getThread(threadId);
     if (t) t.name = name;
@@ -515,6 +546,43 @@ function registerIpc(): void {
         meta?.role.kind === "conversation" ? meta.role.conversationId : null,
       promptCapture: meta?.role.kind === "promptCapture",
     };
+  });
+
+  ipcMain.handle(IPC.installRuntime, async () => {
+    const previousReady =
+      orch.preflight.kind === "ready" ? orch.preflight : null;
+    try {
+      const installed = await managedRuntime.install((progress) => {
+        setPreflight({
+          kind: "runtimeInstalling",
+          version: MANAGED_CODEX_RELEASE.version,
+          ...progress,
+        });
+      });
+      setPreflight({
+        kind: "ready",
+        version: installed.version,
+        warning: null,
+        runtimePath: managedRuntime.displayPath,
+      });
+      if (!client) await boot();
+      return { ok: true };
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      // A failed Settings reinstall must not take a healthy, already-running
+      // session offline. Initial setup has no fallback and uses the full retry
+      // surface; a live session reports the failure inside Settings instead.
+      if (client && previousReady) {
+        setPreflight(previousReady);
+      } else {
+        setPreflight({
+          kind: "runtimeError",
+          version: MANAGED_CODEX_RELEASE.version,
+          detail,
+        });
+      }
+      return { ok: false, error: detail };
+    }
   });
 
   // A thread in its own window (3.2).
@@ -940,6 +1008,9 @@ void app.whenReady().then(() => {
     onData: (id, data) => emit({ type: "terminalData", id, data }),
     onExit: (id, code) => emit({ type: "terminalExit", id, code }),
   });
+  managedRuntime = new ManagedCodexRuntime(
+    path.join(app.getPath("userData"), "runtime", "codex"),
+  );
   orch.workspace = persisted.recents[0] ?? null;
   registerIpc();
   createWindow();

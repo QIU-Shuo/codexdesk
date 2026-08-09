@@ -5,9 +5,10 @@ CodexDesk is an early, community-supported preview.
 Before opening an issue:
 
 1. Confirm macOS is running on Apple silicon.
-2. Run `codex --version` and verify Codex CLI 0.144.4 or newer is available on
-   `PATH`.
-3. Run `codex login` and reproduce the problem once after restarting CodexDesk.
+2. Open **Settings → General → Codex runtime** and note the managed runtime
+   version. Use **Reinstall** there if setup or verification failed.
+3. Sign in through CodexDesk and reproduce the problem once after restarting
+   the app. A system `codex` command is not required and is not used.
 4. Search existing GitHub Issues for the same symptom.
 
 For a useful bug report, include the CodexDesk version, macOS version, Codex CLI

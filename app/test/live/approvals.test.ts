@@ -12,7 +12,7 @@ import type { AppEvent } from "../../src/shared/ipc";
 describe("live approvals", () => {
   it("receives a command approval request and completes the turn after approving", async () => {
     const events: AppEvent[] = [];
-    const client = new AppServerClient((e) => events.push(e));
+    const client = new AppServerClient((e) => events.push(e), "codex");
     await client.connect();
     const thread = await client.startThread({ cwd: "/tmp/codexdesk-scratch" });
 
@@ -81,7 +81,7 @@ describe("live approvals", () => {
 
   it("streams reasoning deltas with an index", async () => {
     const events: AppEvent[] = [];
-    const client = new AppServerClient((e) => events.push(e));
+    const client = new AppServerClient((e) => events.push(e), "codex");
     await client.connect();
     const thread = await client.startThread({ cwd: "/tmp/codexdesk-scratch" });
 

@@ -78,6 +78,7 @@ import {
 import { ChangesPane } from "./ChangesPane";
 import { DeliveryBar } from "./DeliveryBar";
 import { SignIn } from "./SignIn";
+import { RuntimeSetup } from "./RuntimeSetup";
 import { DEFAULT_BINDINGS, useShortcuts } from "./shortcuts";
 import {
   buildTranscriptRows,
@@ -1460,15 +1461,6 @@ export function App() {
             />
           )}
 
-          {preflight.kind === "cliMissing" && (
-            <div className="banner error">{preflight.detail}</div>
-          )}
-          {preflight.kind === "cliTooOld" && (
-            <div className="banner error">
-              codex {preflight.found} is older than the required{" "}
-              {preflight.minimum}. Run <code>brew upgrade codex</code>.
-            </div>
-          )}
           {preflight.kind === "ready" && preflight.warning && (
             <div className="banner warn">{preflight.warning}</div>
           )}
@@ -1500,7 +1492,9 @@ export function App() {
             <div className="workbench-upper">
               <div className="chat-column">
                 <div className="main-row">
-                  {isNewChat && newChatDraft ? (
+                  {blocked ? (
+                    <RuntimeSetup state={preflight} />
+                  ) : isNewChat && newChatDraft ? (
                     <div className="new-chat-main">
                       <NewChatWelcome
                         context={newChatDraft}
@@ -1774,6 +1768,7 @@ export function App() {
             </div>
           )}
 
+          {!blocked && (
           <div className={`composer-wrap${isNewChat ? " new-chat" : ""}`}>
             {composerCompletion && !composerUnavailable && (
               <MentionPicker
@@ -1977,6 +1972,7 @@ export function App() {
               </div>
             </div>
           </div>
+          )}
         </div>
 
         {/* Files open in a full-height workbench rail. It is a sibling of the
@@ -2135,6 +2131,10 @@ export function App() {
           auth={auth}
           notifyMode={notifyMode}
           codexVersion={preflight.kind === "ready" ? preflight.version : null}
+          runtimePath={
+            preflight.kind === "ready" ? preflight.runtimePath ?? null : null
+          }
+          onReinstallRuntime={() => window.codexDesk.installRuntime()}
           onNotifyMode={(mode) => {
             setNotifyMode(mode);
             void window.codexDesk.setNotifyMode(mode);

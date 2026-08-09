@@ -15,7 +15,7 @@ describe("failure surfacing", () => {
   // will not do it for us, and the failure would otherwise surface much later
   // as a confusing mid-turn error.
   it("accepts a nonexistent cwd — cwd validation is ours to do", async () => {
-    const client = new AppServerClient(() => {});
+    const client = new AppServerClient(() => {}, "codex");
     await client.connect();
     const thread = await client.startThread({
       cwd: "/nonexistent/path/definitely-not-here",
@@ -31,7 +31,7 @@ describe("failure surfacing", () => {
   // broken transport (§9.1).
   it("surfaces an induced failure rather than hanging", async () => {
     const events: AppEvent[] = [];
-    const client = new AppServerClient((e) => events.push(e));
+    const client = new AppServerClient((e) => events.push(e), "codex");
     await client.connect();
     const thread = await client.startThread({ cwd: "/tmp/codexdesk-scratch" });
     const threadId = thread.id;

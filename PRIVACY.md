@@ -6,14 +6,22 @@ backend.
 
 ## Data handled by Codex
 
-CodexDesk starts the separately installed `codex app-server` process and sends
-your prompts, selected workspace context, tool responses, and configuration to
-that local process. Codex then handles service authentication and any data sent
-to OpenAI under the terms and data controls for your Codex account.
+CodexDesk starts its app-managed `codex app-server` process and sends your
+prompts, selected workspace context, tool responses, and configuration to that
+local process. Codex then handles service authentication and any data sent to
+OpenAI under the terms and data controls for your Codex account.
 
-CodexDesk does not ask for or persist an OpenAI API key. Authentication files,
-conversation storage owned by Codex, and OpenAI account controls remain the
-responsibility of the installed Codex CLI. See OpenAI's current
+On first launch, and again only when you explicitly retry or reinstall it,
+CodexDesk downloads a pinned Codex runtime from `releases.openai.com`. That
+request exposes ordinary network metadata such as your IP address and request
+time to the download host. CodexDesk verifies the downloaded checksum, package
+metadata, version, and OpenAI Developer ID signature before use. It does not
+search for, select, modify, or report other Codex installations on your Mac.
+
+CodexDesk does not persist an OpenAI API key. If you choose API-key sign-in,
+the value entered in CodexDesk is sent directly to the local managed runtime;
+Codex owns the resulting authentication files and account controls. See
+OpenAI's current
 [Codex data guidance](https://help.openai.com/en/articles/11369540-codex-and-chatgpt-plan-usage-limits)
 for account-specific details.
 
@@ -33,7 +41,11 @@ Electron's application-data directory. On a fresh macOS install this is:
 
 An installation migrated from the former Occo preview may continue using
 `~/Library/Application Support/occo-desktop` so existing settings are not lost.
-The separately installed Codex CLI has its own storage locations.
+The managed runtime is stored below that application-data directory under
+`runtime/codex/releases/<version>`. It is executable code supplied by OpenAI,
+not part of the CodexDesk app bundle. Account, configuration, plugin, and
+conversation data used by Codex remain in Codex's normal `~/.codex` storage so
+sign-in can be shared with other Codex clients.
 
 CodexDesk does not intentionally transmit telemetry or crash reports. Ordinary
 diagnostic messages may still appear in local terminal, Electron, or macOS
@@ -52,9 +64,10 @@ system logs.
 
 ## Deleting local data
 
-Quit CodexDesk, then remove its application-data directory to reset the app.
-Delete Codex CLI data separately only if you also intend to affect other Codex
-clients on the machine.
+Quit CodexDesk, then remove its application-data directory to reset the app and
+delete its managed runtime. Delete `~/.codex` separately only if you also
+intend to remove shared Codex account, configuration, and conversation data
+used by other Codex clients on the machine.
 
 ## Questions
 

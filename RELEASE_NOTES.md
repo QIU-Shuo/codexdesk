@@ -21,13 +21,18 @@ the Codex app-server interface.
 ## Requirements
 
 - Apple-silicon Mac (`arm64`)
-- Codex CLI 0.144.4 or newer on `PATH`
 - A signed-in Codex account
+
+On first launch, CodexDesk downloads its pinned Codex 0.144.4 runtime directly
+from OpenAI (about 111 MB), verifies its checksum and OpenAI signature, and
+keeps it separate from any system Codex installation.
 
 ## Preview limitations
 
 - x64 and universal macOS builds are not yet tested release targets.
-- CodexDesk does not bundle the Codex CLI or provide an additional sandbox.
+- CodexDesk does not bundle Codex or provide an additional sandbox. First
+  launch therefore requires an internet connection for the managed-runtime
+  download.
 - Automatic updates begin after installing a signed release; the DMG remains
   the recommended first-install format.
 - The development toolchain retains one accepted high-severity advisory chain

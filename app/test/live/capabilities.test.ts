@@ -19,7 +19,7 @@ import type { AppEvent } from "../../src/shared/ipc";
  */
 describe("live capabilities", () => {
   it("lists skills, and reports parse errors rather than hiding them", async () => {
-    const client = new AppServerClient(() => {});
+    const client = new AppServerClient(() => {}, "codex");
     await client.connect();
     const { skills, errors } = await client.listSkills(process.cwd(), false);
 
@@ -38,7 +38,7 @@ describe("live capabilities", () => {
   });
 
   it("returns installed plugins in the shape the catalog maps", async () => {
-    const client = new AppServerClient(() => {});
+    const client = new AppServerClient(() => {}, "codex");
     await client.connect();
     const plugins = await client.listPlugins(process.cwd());
     for (const plugin of plugins) {
@@ -52,7 +52,7 @@ describe("live capabilities", () => {
 
   it("drains MCP pagination and merges live startup status", async () => {
     const updates: AppEvent[] = [];
-    const client = new AppServerClient(() => {});
+    const client = new AppServerClient(() => {}, "codex");
     const seen: string[] = [];
     client.onMcpStatus = (u) => {
       seen.push(`${u.name}:${u.status}`);
@@ -84,7 +84,7 @@ describe("live capabilities", () => {
   });
 
   it("reads the operator's web-search policy", async () => {
-    const client = new AppServerClient(() => {});
+    const client = new AppServerClient(() => {}, "codex");
     await client.connect();
     const settings = await client.readWebSearchSettings();
     const permitted = permittedWebSearchModes(settings.allowedModes);
@@ -97,7 +97,7 @@ describe("live capabilities", () => {
   });
 
   it("reads the effective web-search mode from config", async () => {
-    const client = new AppServerClient(() => {});
+    const client = new AppServerClient(() => {}, "codex");
     await client.connect();
     const settings = await client.readWebSearchSettings();
     expect(

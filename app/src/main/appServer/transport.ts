@@ -21,7 +21,7 @@ export class StdioTransport {
   private stderrBuf = "";
   private handlers: Partial<TransportEvents> = {};
 
-  constructor(private readonly command: string = "codex") {}
+  constructor(private readonly command: string) {}
 
   on<K extends keyof TransportEvents>(ev: K, fn: TransportEvents[K]): void {
     this.handlers[ev] = fn;

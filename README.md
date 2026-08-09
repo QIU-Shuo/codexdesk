@@ -7,8 +7,8 @@ in one local Electron workspace.
 ![CodexDesk new chat screen](assets/codexdesk.png)
 
 > [!IMPORTANT]
-> CodexDesk is an early preview. It currently expects an existing Codex CLI
-> installation and the packaged release configuration is macOS-first.
+> CodexDesk is an early preview. Its packaged release configuration is
+> macOS-first.
 
 ## Highlights
 
@@ -37,18 +37,19 @@ CodexDesk requires:
 
 - An Apple-silicon Mac (`arm64`). Windows, Linux, and Intel Mac builds are not
   yet part of the release matrix.
-- [Codex CLI](https://developers.openai.com/codex/cli) 0.144.4 or newer,
-  available as `codex` on `PATH` and signed in.
+- A Codex account. CodexDesk guides you through sign-in after setup.
 
-Check the CLI before starting:
+On first launch, CodexDesk offers to download its pinned Codex 0.144.4 runtime
+directly from `releases.openai.com` (about 111 MB). It verifies the published
+SHA-256 checksum, package metadata, exact version, and OpenAI Developer ID
+signature before installing the runtime under CodexDesk's application-data
+directory.
 
-```sh
-codex --version
-codex login
-```
-
-The app does not bundle Codex. It launches `codex app-server` locally and uses
-its stdio JSON-RPC transport.
+The app does not bundle Codex, search your `PATH`, change shell profiles, or
+replace another Codex installation. It launches the verified app-private
+runtime by absolute path and communicates with `codex app-server` over local
+stdio JSON-RPC. CodexDesk and other Codex clients may still share the normal
+`~/.codex` account, configuration, plugin, and conversation data.
 
 See [Privacy](PRIVACY.md), [Support](SUPPORT.md), and the
 [Security policy](SECURITY.md) before using the preview with sensitive source
@@ -65,8 +66,8 @@ npm install
 npm start
 ```
 
-The first launch asks you to choose a project folder. Authentication and model
-access come from the installed Codex CLI.
+The first launch installs the managed runtime, asks you to sign in if needed,
+and then asks you to choose a project folder.
 
 ## Development
 
@@ -84,7 +85,8 @@ Changes in the first preview are summarized in the
 [CodexDesk 0.1.0 release notes](RELEASE_NOTES.md).
 
 The committed protocol bindings were generated with Codex CLI 0.144.4. When
-updating the app-server protocol, use the matching CLI and update the version
+updating the app-server protocol, use the matching CLI and update the pinned
+artifact metadata in `app/src/main/managedCodex.ts` plus the protocol version
 constants in `app/src/main/preflight.ts` in the same change:
 
 ```sh
@@ -100,8 +102,8 @@ CodexDesk is a local client, but it is not a sandbox by itself:
   Review approval requests and use an appropriate Codex permission profile.
 - Git worktrees reduce interference between tasks; they are not a security
   boundary.
-- Authentication is owned by Codex. CodexDesk does not ask for or persist an
-  OpenAI API key itself.
+- Authentication is owned by Codex. CodexDesk does not persist an OpenAI API
+  key; API-key sign-in is handed directly to the local managed runtime.
 - Filesystem and process access stay in Electron's main process. The renderer
   uses context isolation, no Node integration, a restrictive Content Security
   Policy, and explicit IPC operations.

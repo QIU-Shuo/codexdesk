@@ -91,7 +91,7 @@ describe("RpcConnection", () => {
 
 describe("StdioTransport line buffering", () => {
   it("reassembles messages split across chunk boundaries", () => {
-    const t = new StdioTransport();
+    const t = new StdioTransport("/usr/bin/false");
     const got: unknown[] = [];
     t.on("message", (m) => got.push(m));
 
@@ -106,7 +106,7 @@ describe("StdioTransport line buffering", () => {
   });
 
   it("handles several messages in one chunk and skips blank lines", () => {
-    const t = new StdioTransport();
+    const t = new StdioTransport("/usr/bin/false");
     const got: unknown[] = [];
     t.on("message", (m) => got.push(m));
     t.onStdout('{"a":1}\n\n{"b":2}\n');
@@ -114,7 +114,7 @@ describe("StdioTransport line buffering", () => {
   });
 
   it("reports a malformed line without dropping later messages", () => {
-    const t = new StdioTransport();
+    const t = new StdioTransport("/usr/bin/false");
     const got: unknown[] = [];
     const errs: string[] = [];
     t.on("message", (m) => got.push(m));

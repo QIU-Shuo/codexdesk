@@ -33,6 +33,8 @@ const api = {
   /** Pull current state on mount; events alone race the renderer's first
    * render and drop the initial preflight/auth/thread-list result. */
   getSnapshot: (): Promise<Snapshot> => ipcRenderer.invoke(IPC.getSnapshot),
+  installRuntime: (): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke(IPC.installRuntime),
 
   selectWorkspace: () => ipcRenderer.invoke(IPC.selectWorkspace),
   setWorkspace: (cwd: string) => ipcRenderer.invoke(IPC.setWorkspace, cwd),

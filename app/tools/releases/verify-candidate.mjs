@@ -3,6 +3,7 @@ import {
   lstat,
   mkdtemp,
   readFile,
+  readdir,
   readlink,
   rm,
   stat,
@@ -166,6 +167,37 @@ for (const relativePath of requiredResources) {
   await stat(path.join(resourcesPath, relativePath));
 }
 
+// CodexDesk installs Codex after first launch. Accidentally adding the 111 MB
+// package as an extraResource would silently turn the signed app into a
+// redistributor and invalidate the documented privacy/update model.
+const resourceEntries = await readdir(resourcesPath, { recursive: true });
+const unexpectedRuntime = resourceEntries.find((relativePath) => {
+  const name = path.basename(relativePath);
+  return (
+    name === "codex" ||
+    name === "codex-code-mode-host" ||
+    name === "codex-package.json" ||
+    /^codex-package-.*\.(?:tar\.gz|tar\.zst|zip)$/.test(name)
+  );
+});
+if (unexpectedRuntime) {
+  throw new Error(`Managed Codex runtime was bundled at ${unexpectedRuntime}`);
+}
+
+const [bundledNotice, bundledPrivacy] = await Promise.all([
+  readFile(path.join(resourcesPath, "NOTICE"), "utf8"),
+  readFile(path.join(resourcesPath, "PRIVACY.md"), "utf8"),
+]);
+if (
+  !bundledNotice.includes("The Ratatui Developers") ||
+  !bundledNotice.includes("Apache License, Version 2.0")
+) {
+  throw new Error("Bundled NOTICE is missing the managed Codex attribution");
+}
+if (!bundledPrivacy.includes("releases.openai.com")) {
+  throw new Error("Bundled privacy notice omits the managed runtime download");
+}
+
 const sourceNotices = await readFile(
   path.resolve(appRoot, "../THIRD_PARTY_LICENSES/npm-production-notices.txt"),
 );
@@ -249,6 +281,7 @@ console.log(`Icon: ${bundledIconName} (CodexDesk artwork verified)`);
 console.log(
   "Legal resources: privacy, npm, Electron, and Chromium notices verified",
 );
+console.log("Managed Codex runtime: intentionally absent from the app bundle");
 if (publicReleaseBuild) {
   console.log(`Stable update feed: ${process.env.CODEXDESK_UPDATE_FEED_URL}`);
 }

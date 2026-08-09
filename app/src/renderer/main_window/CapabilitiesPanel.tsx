@@ -34,6 +34,8 @@ export function CapabilitiesPanel({
   auth,
   notifyMode,
   codexVersion,
+  runtimePath,
+  onReinstallRuntime,
   onNotifyMode,
   onSignOut,
   onClose,
@@ -45,6 +47,8 @@ export function CapabilitiesPanel({
   auth: AuthState;
   notifyMode: NotifyMode;
   codexVersion: string | null;
+  runtimePath: string | null;
+  onReinstallRuntime: () => Promise<{ ok: boolean; error?: string }>;
   onNotifyMode: (mode: NotifyMode) => void;
   onSignOut: () => void;
   onClose: () => void;
@@ -122,6 +126,9 @@ export function CapabilitiesPanel({
                 notifyMode={notifyMode}
                 onNotifyMode={onNotifyMode}
                 onSignOut={onSignOut}
+                codexVersion={codexVersion}
+                runtimePath={runtimePath}
+                onReinstallRuntime={onReinstallRuntime}
               />
             )}
             {tab === "skills" && (
@@ -165,12 +172,20 @@ function GeneralPage({
   notifyMode,
   onNotifyMode,
   onSignOut,
+  codexVersion,
+  runtimePath,
+  onReinstallRuntime,
 }: {
   auth: AuthState;
   notifyMode: NotifyMode;
   onNotifyMode: (mode: NotifyMode) => void;
   onSignOut: () => void;
+  codexVersion: string | null;
+  runtimePath: string | null;
+  onReinstallRuntime: () => Promise<{ ok: boolean; error?: string }>;
 }) {
+  const [runtimeBusy, setRuntimeBusy] = useState(false);
+  const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const signedIn = auth.kind === "signedIn" || auth.kind === "authenticated";
   let accountTitle = "Not signed in";
   let accountDetail = "Sign in from the main window to use Codex.";
@@ -213,6 +228,43 @@ function GeneralPage({
             </button>
           )}
         </div>
+      </section>
+
+      <section className="settings-section">
+        <h2>Codex runtime</h2>
+        <div className="settings-control-row">
+          <div>
+            <strong>
+              Managed by CodexDesk{codexVersion ? ` · ${codexVersion}` : ""}
+            </strong>
+            <span title={runtimePath ?? undefined}>
+              {runtimePath ?? "Runtime location unavailable"}
+            </span>
+          </div>
+          <button
+            className="ghost"
+            type="button"
+            disabled={runtimeBusy}
+            onClick={() => {
+              setRuntimeBusy(true);
+              setRuntimeError(null);
+              void onReinstallRuntime()
+                .then((result) => {
+                  if (!result.ok) {
+                    setRuntimeError(result.error ?? "Installation failed.");
+                  }
+                })
+                .finally(() => setRuntimeBusy(false));
+            }}
+          >
+            {runtimeBusy ? "Reinstalling…" : "Reinstall"}
+          </button>
+        </div>
+        {runtimeError && (
+          <p className="settings-runtime-error" role="alert">
+            {runtimeError}
+          </p>
+        )}
       </section>
 
       <section className="settings-section">

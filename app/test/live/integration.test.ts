@@ -15,7 +15,7 @@ import type { AppEvent } from "../../src/shared/ipc";
 describe("live app-server", () => {
   it("handshakes, starts a thread, streams a turn, renders items", async () => {
     const events: AppEvent[] = [];
-    const client = new AppServerClient((e) => events.push(e));
+    const client = new AppServerClient((e) => events.push(e), "codex");
 
     await client.connect();
     const auth = await client.readAuth();

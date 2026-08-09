@@ -30,7 +30,7 @@ function scratchRepo(): string {
 describe("thread lifecycle (live)", () => {
   it("starts, lists, names, forks, and deletes a thread", async () => {
     const repo = scratchRepo();
-    const client = new AppServerClient(() => {});
+    const client = new AppServerClient(() => {}, "codex");
     await client.connect();
 
     const thread = await client.startThread({ cwd: repo });
@@ -85,7 +85,7 @@ describe("thread lifecycle (live)", () => {
 
   it("resumes a thread and recovers its history", async () => {
     const repo = scratchRepo();
-    const a = new AppServerClient(() => {});
+    const a = new AppServerClient(() => {}, "codex");
     await a.connect();
     const thread = await a.startThread({ cwd: repo });
     await a.sendMessage(thread.id, [
@@ -95,7 +95,7 @@ describe("thread lifecycle (live)", () => {
     a.dispose();
 
     // A fresh connection, as after an app restart.
-    const b = new AppServerClient(() => {});
+    const b = new AppServerClient(() => {}, "codex");
     await b.connect();
     const resumed = await b.resumeThread(thread.id, { cwd: repo });
     expect(resumed.id).toBe(thread.id);

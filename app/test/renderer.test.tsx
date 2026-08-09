@@ -66,7 +66,13 @@ function view(threadId: string, draft = ""): ThreadView {
 
 function snapshot(over: Partial<Snapshot> = {}): Snapshot {
   return {
-    preflight: { kind: "ready", version: "0.144.4", warning: null },
+    preflight: {
+      kind: "ready",
+      version: "0.144.4",
+      warning: null,
+      runtimePath:
+        "/Users/test/Library/Application Support/CodexDesk/runtime/codex/releases/0.144.4",
+    },
     auth: { kind: "signedIn", account: { type: "apiKey" } as never },
     cwd: "/repo",
     recents: [],
@@ -132,6 +138,7 @@ const calls = {
   notifyModes: [] as string[],
   loggedOut: 0,
   workspaceSelections: 0,
+  runtimeInstalls: 0,
 };
 /** Swapped per test; the bridge closes over it. */
 let usageFixture: unknown = null;
@@ -152,6 +159,10 @@ function installBridge(snap: Snapshot) {
       return () => {};
     },
     getSnapshot: async () => snapshotAfterWorkspaceSelection ?? snap,
+    installRuntime: async () => {
+      calls.runtimeInstalls += 1;
+      return { ok: true };
+    },
     selectWorkspace: async () => {
       calls.workspaceSelections += 1;
       return selectWorkspaceResult;
@@ -321,6 +332,7 @@ afterEach(() => {
   calls.notifyModes.length = 0;
   calls.loggedOut = 0;
   calls.workspaceSelections = 0;
+  calls.runtimeInstalls = 0;
   calls.redeemed = 0;
   usageFixture = null;
   readDirFixture = [];
@@ -332,6 +344,72 @@ afterEach(() => {
   selectWorkspaceResult = null;
   snapshotAfterWorkspaceSelection = null;
   localStorage.clear();
+});
+
+describe("managed Codex setup", () => {
+  it("offers one-click installation instead of asking for a PATH CLI", async () => {
+    installBridge(
+      snapshot({
+        preflight: {
+          kind: "runtimeMissing",
+          version: "0.144.4",
+          sizeBytes: 116_111_014,
+        },
+      }),
+    );
+    render(<App />);
+    await act(async () => {});
+
+    expect(screen.getByText("Install Codex for CodexDesk")).toBeTruthy();
+    expect(screen.getByText("Official OpenAI release")).toBeTruthy();
+    expect(screen.getByText("111 MB")).toBeTruthy();
+    expect(document.querySelector(".composer")).toBeNull();
+
+    await act(async () =>
+      screen.getByRole("button", { name: "Install Codex runtime" }).click(),
+    );
+    expect(calls.runtimeInstalls).toBe(1);
+  });
+
+  it("renders download progress and a recoverable verification failure", async () => {
+    installBridge(
+      snapshot({
+        preflight: {
+          kind: "runtimeInstalling",
+          version: "0.144.4",
+          stage: "downloading",
+          downloadedBytes: 58_055_507,
+          totalBytes: 116_111_014,
+        },
+      }),
+    );
+    render(<App />);
+    await act(async () => {});
+
+    expect(screen.getByText("Downloading Codex…")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("progressbar", { name: "Codex runtime installation" })
+        .getAttribute("aria-valuenow"),
+    ).toBe("50");
+
+    await act(async () =>
+      emit({
+        type: "preflight",
+        state: {
+          kind: "runtimeError",
+          version: "0.144.4",
+          detail: "The OpenAI signature could not be verified.",
+        },
+      }),
+    );
+    expect(screen.getByRole("alert").textContent).toContain(
+      "The OpenAI signature could not be verified.",
+    );
+    expect(
+      screen.getByRole("button", { name: "Retry installation" }),
+    ).toBeTruthy();
+  });
 });
 
 describe("composer send/stop button", () => {
@@ -3422,6 +3500,11 @@ describe("capabilities panel", () => {
     expect(
       document.querySelector(".settings-account-card")?.textContent,
     ).toContain("you@example.com · plus");
+    expect(screen.getByText("Managed by CodexDesk · 0.144.4")).toBeTruthy();
+    await act(async () =>
+      screen.getByRole("button", { name: "Reinstall" }).click(),
+    );
+    expect(calls.runtimeInstalls).toBe(1);
     await act(async () =>
       screen.getByRole("radio", { name: "Always" }).click(),
     );

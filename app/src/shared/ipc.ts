@@ -63,11 +63,29 @@ export type {
 } from "../contracts/views/conversations";
 export type { DeliveryProgressView } from "../contracts/views/delivery";
 
+export type RuntimeInstallStage =
+  | "checkingSource"
+  | "downloading"
+  | "verifying"
+  | "installing";
+
 export type PreflightState =
   | { kind: "checking" }
-  | { kind: "cliMissing"; detail: string }
-  | { kind: "cliTooOld"; found: string; minimum: string }
-  | { kind: "ready"; version: string; warning: string | null };
+  | { kind: "runtimeMissing"; version: string; sizeBytes: number }
+  | {
+      kind: "runtimeInstalling";
+      version: string;
+      stage: RuntimeInstallStage;
+      downloadedBytes: number;
+      totalBytes: number;
+    }
+  | { kind: "runtimeError"; version: string; detail: string }
+  | {
+      kind: "ready";
+      version: string;
+      warning: string | null;
+      runtimePath?: string;
+    };
 
 export type AuthState =
   | { kind: "unknown" }
@@ -566,6 +584,7 @@ export type { ReviewTarget, FuzzyFileSearchResult, Model };
 export const IPC = {
   event: "codexdesk:event",
   getSnapshot: "codexdesk:getSnapshot",
+  installRuntime: "codexdesk:installRuntime",
   selectWorkspace: "codexdesk:selectWorkspace",
   setWorkspace: "codexdesk:setWorkspace",
   readGitBranches: "codexdesk:readGitBranches",

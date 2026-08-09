@@ -5,6 +5,19 @@
 CodexDesk is an early preview. Security fixes are provided only for the latest
 0.1.x preview and the latest `main` branch.
 
+## Managed Codex runtime
+
+CodexDesk does not execute a `codex` discovered on `PATH`. It downloads one
+pinned Apple-silicon standalone package over HTTPS from
+`releases.openai.com`, verifies fixed package and checksum-manifest SHA-256
+digests, validates the package metadata and exact version, and requires the
+Codex executable and code-mode host to carry OpenAI's Developer ID signature.
+Only then is the payload atomically installed in CodexDesk's application-data
+directory and launched by absolute path.
+
+Runtime version and artifact digests are release inputs. Changes to them should
+be reviewed together with regenerated app-server protocol bindings.
+
 ## Reporting a vulnerability
 
 Please do not disclose suspected vulnerabilities in a public issue.

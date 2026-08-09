@@ -15,6 +15,21 @@ THIRD_PARTY_LICENSES/Apache-2.0.txt.
 OpenAI Codex: https://github.com/openai/codex
 Copyright 2025 OpenAI
 
+CodexDesk downloads the pinned OpenAI Codex 0.144.4 standalone runtime from
+releases.openai.com at the user's request. The runtime is installed in local
+application data and is licensed under the Apache License, Version 2.0. A copy
+of that license is provided at THIRD_PARTY_LICENSES/Apache-2.0.txt.
+
+The upstream notice for that runtime is reproduced below:
+
+OpenAI Codex
+Copyright 2025 OpenAI
+
+This project includes code derived from Ratatui
+(https://github.com/ratatui/ratatui), licensed under the MIT license.
+Copyright (c) 2016-2022 Florian Dehau
+Copyright (c) 2023-2025 The Ratatui Developers
+
 File and folder icons are provided by React Symbols under the MIT License.
 A copy of that license is provided at
 THIRD_PARTY_LICENSES/React-Symbols-MIT.txt.

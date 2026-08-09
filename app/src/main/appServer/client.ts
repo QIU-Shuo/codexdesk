@@ -123,14 +123,18 @@ export type ThreadConfig = {
  * parts of the schema stop (§12.1).
  */
 export class AppServerClient implements CapabilitiesPort {
-  private transport = new StdioTransport();
+  private transport: StdioTransport;
   private rpc: RpcConnection;
   readonly broker: RequestBroker;
   /** Last full snapshot; sparse updates merge into this (§5, step 2.4). */
   private rateLimits: RateLimitSnapshot | null = null;
   private activeTurns = new Map<string, string>();
 
-  constructor(private readonly emit: (ev: AppEvent) => void) {
+  constructor(
+    private readonly emit: (ev: AppEvent) => void,
+    command: string,
+  ) {
+    this.transport = new StdioTransport(command);
     this.broker = new RequestBroker({
       onPending: (request) => this.emit({ type: "requestPending", request }),
       onResolved: (threadId, requestId) =>

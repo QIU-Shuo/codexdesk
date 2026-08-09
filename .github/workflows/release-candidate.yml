@@ -72,6 +72,8 @@ jobs:
           echo "CODEXDESK_NOTARY_ISSUER=$CODEXDESK_NOTARY_ISSUER" >> "$GITHUB_ENV"
 
       - name: Notarize and inspect candidate
+        env:
+          CODEXDESK_MAC_SIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
         run: |
           npm run notarize:release
           npm run release:inspect
@@ -81,7 +83,8 @@ jobs:
         with:
           name: CodexDesk-macOS-arm64-private-candidate
           path: |
-            app/out/make/zip/darwin/arm64/CodexDesk-darwin-arm64-*.zip
+            app/out/make/zip/darwin/arm64/CodexDesk-macOS-arm64-*.zip
+            app/out/make/dmg/darwin/arm64/CodexDesk-macOS-arm64-*.dmg
             app/out/make/zip/darwin/arm64/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 7

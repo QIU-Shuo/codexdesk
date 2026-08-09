@@ -5,10 +5,12 @@ import {
   readFile,
   rename,
   rm,
+  symlink,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import { releaseArtifactNames } from "../releases/artifact-names.mjs";
 
 const execFileAsync = promisify(execFile);
 const appRoot = path.resolve(import.meta.dirname, "../..");
@@ -22,6 +24,7 @@ const profile =
 const apiKeyPath = process.env.CODEXDESK_NOTARY_KEY_PATH;
 const apiKeyId = process.env.CODEXDESK_NOTARY_KEY_ID;
 const apiIssuer = process.env.CODEXDESK_NOTARY_ISSUER;
+const signingIdentity = process.env.CODEXDESK_MAC_SIGN_IDENTITY?.trim();
 const productName = canaryBuild ? "CodexDesk-canary" : "CodexDesk";
 const appName = `${productName}.app`;
 const appPath = path.join(
@@ -30,8 +33,12 @@ const appPath = path.join(
   `${productName}-darwin-${arch}`,
   appName,
 );
-const zipName = `${productName}-darwin-${arch}-${packageJson.version}.zip`;
-const makeDir = path.join(
+const { dmg: dmgName, zip: zipName } = releaseArtifactNames({
+  productName,
+  arch,
+  version: packageJson.version,
+});
+const zipDir = path.join(
   appRoot,
   "out",
   "make",
@@ -39,7 +46,9 @@ const makeDir = path.join(
   "darwin",
   arch,
 );
-const updateZip = path.join(makeDir, zipName);
+const dmgDir = path.join(appRoot, "out", "make", "dmg", "darwin", arch);
+const updateZip = path.join(zipDir, zipName);
+const installerDmg = path.join(dmgDir, dmgName);
 
 async function run(command, args) {
   const result = await execFileAsync(command, args, {
@@ -77,21 +86,11 @@ const credentials = notaryCredentials();
 const workDir = await mkdtemp(path.join(tmpdir(), "codexdesk-notary-"));
 const submissionZip = path.join(workDir, zipName);
 
-try {
-  await run("codesign", ["--verify", "--deep", "--strict", appPath]);
-  await run("ditto", [
-    "-c",
-    "-k",
-    "--sequesterRsrc",
-    "--keepParent",
-    appPath,
-    submissionZip,
-  ]);
-
+async function submitForNotarization(inputPath, label) {
   const submission = await run("xcrun", [
     "notarytool",
     "submit",
-    submissionZip,
+    inputPath,
     ...credentials,
     "--wait",
     "--output-format",
@@ -108,17 +107,35 @@ try {
       ]).catch(() => undefined);
     }
     throw new Error(
-      `Notarization ${result.status || "failed"}; submission ${result.id || "unknown"}`,
+      `${label} notarization ${result.status || "failed"}; submission ${result.id || "unknown"}`,
     );
   }
+  return result;
+}
+
+try {
+  await run("codesign", ["--verify", "--deep", "--strict", appPath]);
+  await run("ditto", [
+    "-c",
+    "-k",
+    "--sequesterRsrc",
+    "--keepParent",
+    appPath,
+    submissionZip,
+  ]);
+
+  const appSubmission = await submitForNotarization(
+    submissionZip,
+    "Application",
+  );
 
   await run("xcrun", ["stapler", "staple", appPath]);
   await run("xcrun", ["stapler", "validate", appPath]);
   await run("codesign", ["--verify", "--deep", "--strict", appPath]);
   await run("spctl", ["--assess", "--type", "execute", "--verbose=2", appPath]);
 
-  await mkdir(makeDir, { recursive: true });
-  const notarizedZip = path.join(makeDir, `.${zipName}.notarized`);
+  await mkdir(zipDir, { recursive: true });
+  const notarizedZip = path.join(zipDir, `.${zipName}.notarized`);
   await run("ditto", [
     "-c",
     "-k",
@@ -129,9 +146,46 @@ try {
   ]);
   await rename(notarizedZip, updateZip);
 
-  console.log(`Notarization accepted: ${result.id}`);
+  const dmgRoot = path.join(workDir, "dmg-root");
+  await mkdir(dmgRoot);
+  await run("ditto", [appPath, path.join(dmgRoot, appName)]);
+  await symlink("/Applications", path.join(dmgRoot, "Applications"));
+  await mkdir(dmgDir, { recursive: true });
+  const unsignedDmg = path.join(workDir, dmgName);
+  await run("hdiutil", [
+    "create",
+    "-volname",
+    productName,
+    "-srcfolder",
+    dmgRoot,
+    "-ov",
+    "-format",
+    "UDZO",
+    unsignedDmg,
+  ]);
+  if (!signingIdentity) {
+    throw new Error(
+      "Set CODEXDESK_MAC_SIGN_IDENTITY before notarizing the installer DMG.",
+    );
+  }
+  await run("codesign", [
+    "--force",
+    "--sign",
+    signingIdentity,
+    "--timestamp",
+    unsignedDmg,
+  ]);
+  const dmgSubmission = await submitForNotarization(unsignedDmg, "DMG");
+  await run("xcrun", ["stapler", "staple", unsignedDmg]);
+  await run("xcrun", ["stapler", "validate", unsignedDmg]);
+  await run("hdiutil", ["verify", unsignedDmg]);
+  await rename(unsignedDmg, installerDmg);
+
+  console.log(`Application notarization accepted: ${appSubmission.id}`);
+  console.log(`DMG notarization accepted: ${dmgSubmission.id}`);
   console.log(`Stapled app: ${appPath}`);
   console.log(`Notarized update ZIP: ${updateZip}`);
+  console.log(`Notarized installer DMG: ${installerDmg}`);
 } finally {
   await rm(workDir, { recursive: true, force: true });
 }

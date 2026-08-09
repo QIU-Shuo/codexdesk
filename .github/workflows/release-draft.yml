@@ -102,6 +102,7 @@ jobs:
       - name: Notarize, inspect, and prepare release metadata
         env:
           CODEXDESK_PUBLIC_RELEASE: "true"
+          CODEXDESK_MAC_SIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
         run: |
           npm run notarize:release
           npm run release:inspect
@@ -113,7 +114,8 @@ jobs:
         with:
           name: CodexDesk-macOS-arm64-${{ inputs.release_tag }}
           path: |
-            app/out/make/zip/darwin/arm64/CodexDesk-darwin-arm64-*.zip
+            app/out/make/zip/darwin/arm64/CodexDesk-macOS-arm64-*.zip
+            app/out/make/dmg/darwin/arm64/CodexDesk-macOS-arm64-*.dmg
             app/out/make/zip/darwin/arm64/SHA256SUMS.txt
             app/out/make/zip/darwin/arm64/feed.json
             app/out/release/CodexDesk-*-sbom.spdx.json
@@ -156,7 +158,7 @@ jobs:
             exit 1
           fi
           mapfile -t assets < <(find release-artifacts -type f -print | sort)
-          test "${#assets[@]}" -eq 4
+          test "${#assets[@]}" -eq 5
           gh release create "$RELEASE_TAG" \
             --verify-tag \
             --draft \

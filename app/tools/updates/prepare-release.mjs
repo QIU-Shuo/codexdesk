@@ -1,5 +1,6 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { releaseArtifactNames } from "../releases/artifact-names.mjs";
 import { resolvePublicAssetBaseUrl } from "./feed-config.mjs";
 import { createStaticUpdateManifest } from "./manifest.mjs";
 
@@ -10,7 +11,11 @@ const packageJson = JSON.parse(
 );
 const arch = process.env.CODEXDESK_UPDATE_ARCH || process.arch;
 const makeDir = path.join(appRoot, "out", "make", "zip", "darwin", arch);
-const expectedZip = `CodexDesk-darwin-${arch}-${packageJson.version}.zip`;
+const { zip: expectedZip } = releaseArtifactNames({
+  productName: "CodexDesk",
+  arch,
+  version: packageJson.version,
+});
 const candidates = (await readdir(makeDir).catch(() => [])).filter(
   (name) => name === expectedZip,
 );

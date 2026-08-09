@@ -28,8 +28,8 @@ the Codex app-server interface.
 
 - x64 and universal macOS builds are not yet tested release targets.
 - CodexDesk does not bundle the Codex CLI or provide an additional sandbox.
-- The stable public update feed is intentionally disabled until the repository
-  replacement and public-release review are complete.
+- Automatic updates begin after installing a signed release; the DMG remains
+  the recommended first-install format.
 - The development toolchain retains one accepted high-severity advisory chain
   rooted in an unpublished `nanoid` 3.x patch. It is excluded from production
   packages and guarded by an exact CI allow-list; production dependencies have

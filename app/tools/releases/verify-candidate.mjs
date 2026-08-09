@@ -1,10 +1,20 @@
 import { execFile } from "node:child_process";
-import { readFile, stat, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdtemp,
+  readFile,
+  readlink,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { extractFile } from "@electron/asar";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { resolveBuildUpdateFeed } from "../updates/feed-config.mjs";
+import { releaseArtifactNames } from "./artifact-names.mjs";
 
 const execFileAsync = promisify(execFile);
 const appRoot = path.resolve(import.meta.dirname, "../..");
@@ -25,10 +35,14 @@ const appPath = path.join(
   `${productName}.app`,
 );
 const zipDir = path.join(appRoot, "out", "make", "zip", "darwin", arch);
-const zipPath = path.join(
-  zipDir,
-  `${productName}-darwin-${arch}-${packageJson.version}.zip`,
-);
+const dmgDir = path.join(appRoot, "out", "make", "dmg", "darwin", arch);
+const artifactNames = releaseArtifactNames({
+  productName,
+  arch,
+  version: packageJson.version,
+});
+const zipPath = path.join(zipDir, artifactNames.zip);
+const dmgPath = path.join(dmgDir, artifactNames.dmg);
 
 async function run(command, args) {
   const result = await execFileAsync(command, args, {
@@ -55,8 +69,52 @@ async function plistValue(key) {
 
 await stat(appPath);
 await stat(zipPath);
+await stat(dmgPath);
 await run("codesign", ["--verify", "--deep", "--strict", appPath]);
 await run("unzip", ["-tq", zipPath]);
+await run("hdiutil", ["verify", dmgPath]);
+await run("codesign", ["--verify", "--verbose=2", dmgPath]);
+await run("xcrun", ["stapler", "validate", appPath]);
+await run("xcrun", ["stapler", "validate", dmgPath]);
+await run("spctl", [
+  "--assess",
+  "--type",
+  "open",
+  "--context",
+  "context:primary-signature",
+  "--verbose=2",
+  dmgPath,
+]);
+
+const dmgMount = await mkdtemp(path.join(tmpdir(), "codexdesk-dmg-"));
+let dmgAttached = false;
+try {
+  await run("hdiutil", [
+    "attach",
+    "-nobrowse",
+    "-readonly",
+    "-mountpoint",
+    dmgMount,
+    dmgPath,
+  ]);
+  dmgAttached = true;
+  const mountedApp = path.join(dmgMount, `${productName}.app`);
+  const applicationsLink = path.join(dmgMount, "Applications");
+  await stat(mountedApp);
+  const linkInfo = await lstat(applicationsLink);
+  if (!linkInfo.isSymbolicLink()) {
+    throw new Error("DMG Applications item is not a symbolic link");
+  }
+  if ((await readlink(applicationsLink)) !== "/Applications") {
+    throw new Error("DMG Applications link does not target /Applications");
+  }
+  await run("codesign", ["--verify", "--deep", "--strict", mountedApp]);
+} finally {
+  if (dmgAttached) {
+    await run("hdiutil", ["detach", dmgMount]);
+  }
+  await rm(dmgMount, { recursive: true, force: true });
+}
 
 const zippedPaths = [
   {
@@ -168,11 +226,19 @@ if (!signatureDetails.includes("runtime")) {
   throw new Error("Candidate signature does not enable hardened runtime");
 }
 
-const checksum = (await run("shasum", ["-a", "256", zipPath])).stdout;
-const checksumHash = checksum.split(/\s+/)[0];
+const checksums = await Promise.all(
+  [dmgPath, zipPath].map(async (artifactPath) => {
+    const checksum = (await run("shasum", ["-a", "256", artifactPath]))
+      .stdout;
+    return {
+      hash: checksum.split(/\s+/)[0],
+      name: path.basename(artifactPath),
+    };
+  }),
+);
 await writeFile(
   path.join(zipDir, "SHA256SUMS.txt"),
-  `${checksumHash}  ${path.basename(zipPath)}\n`,
+  `${checksums.map(({ hash, name }) => `${hash}  ${name}`).join("\n")}\n`,
   "utf8",
 );
 
@@ -187,7 +253,7 @@ if (publicReleaseBuild) {
   console.log(`Stable update feed: ${process.env.CODEXDESK_UPDATE_FEED_URL}`);
 }
 console.log(`Verified ZIP: ${zipPath}`);
-console.log(`SHA-256: ${checksumHash}`);
-console.log(
-  "Notarization was not checked; notarize only after release approval.",
-);
+console.log(`Verified DMG: ${dmgPath}`);
+for (const { hash, name } of checksums) {
+  console.log(`SHA-256 (${name}): ${hash}`);
+}

@@ -25,12 +25,18 @@ in one local Electron workspace.
 - Keep privileged operations in Electron's main process behind a narrow preload
   API; the renderer has no direct Node.js access.
 
-## Requirements
+## Install the preview
 
-- macOS for the currently configured packaged build. Development on Windows and
-  Linux is welcome but is not yet part of the release matrix.
-- Node.js 22.12 or newer and npm.
-- Git.
+Download the Apple-silicon `.dmg` from the
+[GitHub Releases page](https://github.com/QIU-Shuo/codexdesk/releases), open it,
+and drag CodexDesk into Applications. Each release is signed with an Apple
+Developer ID and notarized by Apple. The accompanying ZIP is used by the
+in-app updater; most people should install with the DMG.
+
+CodexDesk requires:
+
+- An Apple-silicon Mac (`arm64`). Windows, Linux, and Intel Mac builds are not
+  yet part of the release matrix.
 - [Codex CLI](https://developers.openai.com/codex/cli) 0.144.4 or newer,
   available as `codex` on `PATH` and signed in.
 
@@ -49,6 +55,8 @@ See [Privacy](PRIVACY.md), [Support](SUPPORT.md), and the
 code.
 
 ## Run from source
+
+Source development additionally requires Node.js 22.12 or newer, npm, and Git.
 
 ```sh
 git clone https://github.com/QIU-Shuo/codexdesk.git
@@ -106,9 +114,9 @@ opening a public exploit report.
 ## Project status
 
 CodexDesk has a permanent macOS bundle identifier, Developer ID signing and
-notarization tooling, and a draft-only release workflow. The initial preview
-target is macOS arm64. Binary releases remain explicit maintainer-controlled
-actions; source builds and packaged development builds are also supported.
+notarization, and a maintainer-controlled release workflow. The initial preview
+target is macOS arm64 and ships as a DMG, with a ZIP retained for automatic
+updates. Source builds and packaged development builds are also supported.
 
 ## Independence from OpenAI
 

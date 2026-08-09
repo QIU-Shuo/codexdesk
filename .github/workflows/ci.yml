@@ -1,8 +1,12 @@
 name: CI
 
 on:
-  push:
   pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
 
 permissions:
   contents: read
@@ -28,3 +32,21 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - run: npm ci
       - run: npm run release:verify
+
+  package-macos:
+    runs-on: macos-15
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.12.0
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run electron:install
+      - run: npm run package -- --platform=darwin --arch=arm64

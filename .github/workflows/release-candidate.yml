@@ -1,0 +1,95 @@
+name: Private macOS release candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-release-candidate
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    runs-on: macos-15
+    timeout-minutes: 45
+    environment: private-release-candidate
+    defaults:
+      run:
+        working-directory: app
+    env:
+      CODEXDESK_UPDATE_ARCH: arm64
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.12.0
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run release:verify
+
+      - name: Import Developer ID certificate
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          test -n "$MACOS_CERTIFICATE_P12_BASE64"
+          test -n "$MACOS_CERTIFICATE_PASSWORD"
+          keychain_path="$RUNNER_TEMP/codexdesk-build.keychain-db"
+          keychain_password="$(openssl rand -base64 24)"
+          printf '%s' "$MACOS_CERTIFICATE_P12_BASE64" | base64 -D > "$RUNNER_TEMP/codexdesk-release.p12"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$RUNNER_TEMP/codexdesk-release.p12" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain_path"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+          echo "CODEXDESK_BUILD_KEYCHAIN=$keychain_path" >> "$GITHUB_ENV"
+
+      - name: Build signed arm64 candidate
+        env:
+          CODEXDESK_MAC_SIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        run: |
+          test -n "$CODEXDESK_MAC_SIGN_IDENTITY"
+          npm run make:release
+
+      - name: Prepare App Store Connect API key
+        env:
+          APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          CODEXDESK_NOTARY_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          CODEXDESK_NOTARY_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          test -n "$APPLE_API_KEY_P8_BASE64"
+          test -n "$CODEXDESK_NOTARY_KEY_ID"
+          test -n "$CODEXDESK_NOTARY_ISSUER"
+          printf '%s' "$APPLE_API_KEY_P8_BASE64" | base64 -D > "$RUNNER_TEMP/codexdesk-notary.p8"
+          chmod 600 "$RUNNER_TEMP/codexdesk-notary.p8"
+          echo "CODEXDESK_NOTARY_KEY_PATH=$RUNNER_TEMP/codexdesk-notary.p8" >> "$GITHUB_ENV"
+          echo "CODEXDESK_NOTARY_KEY_ID=$CODEXDESK_NOTARY_KEY_ID" >> "$GITHUB_ENV"
+          echo "CODEXDESK_NOTARY_ISSUER=$CODEXDESK_NOTARY_ISSUER" >> "$GITHUB_ENV"
+
+      - name: Notarize and inspect candidate
+        run: |
+          npm run notarize:release
+          npm run release:inspect
+
+      - name: Retain private review artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: CodexDesk-macOS-arm64-private-candidate
+          path: |
+            app/out/make/zip/darwin/arm64/CodexDesk-darwin-arm64-*.zip
+            app/out/make/zip/darwin/arm64/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Remove temporary signing material
+        if: always()
+        run: |
+          if [ -n "${CODEXDESK_BUILD_KEYCHAIN:-}" ]; then
+            security delete-keychain "$CODEXDESK_BUILD_KEYCHAIN" || true
+          fi
+          rm -f "$RUNNER_TEMP/codexdesk-release.p12" "$RUNNER_TEMP/codexdesk-notary.p8"

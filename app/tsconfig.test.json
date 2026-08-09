@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Tests index into arrays constantly (`files[0].hunks[1]`) where the
+    // shape is guaranteed by the fixture two lines above. Requiring a guard
+    // on each one buries the assertion it exists to make.
+    "noUncheckedIndexedAccess": false,
+    // A test that imports a helper it stops using is not a defect worth
+    // failing the build over; the linter covers it.
+    "noUnusedLocals": false
+  },
+  "include": ["test", "src"]
+}

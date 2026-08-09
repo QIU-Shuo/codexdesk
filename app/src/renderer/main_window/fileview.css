@@ -1,0 +1,1066 @@
+/*
+ * File tree and viewer.
+ *
+ * A separate stylesheet rather than more of `index.css` — that file is 3800
+ * lines and under concurrent edit, and these rules are one self-contained
+ * surface. It is imported after `index.css`, so it wins ties by order.
+ */
+
+/* ---- tree ---- */
+
+.tree-row.active {
+  background: var(--accent-quiet);
+}
+
+.tree-row.active .tree-file {
+  color: var(--text);
+}
+
+.tree-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.tree-icon > svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.tree-menu,
+.fv-menu {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  min-width: 168px;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-panel);
+  background: var(--raised);
+  /* No shadow: depth is a 1px stroke. A raised tone plus the hairline is what
+     lifts a menu off the surface under it. */
+}
+
+.tree-menu button,
+.fv-menu button {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
+.tree-menu button:hover,
+.fv-menu button:hover {
+  background: var(--accent-quiet);
+  color: var(--text);
+}
+
+/* ---- viewer shell ---- */
+
+.fv-notice {
+  padding: 4px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 11px;
+}
+
+/* ---- breadcrumb ---- */
+
+.fv-breadcrumb {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 10.5px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.fv-crumb {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.fv-crumb-sep {
+  padding: 0 4px;
+  color: var(--faint);
+}
+
+.fv-crumb-btn {
+  padding: 1px 3px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+.fv-crumb-btn:hover {
+  background: var(--accent-quiet);
+  color: var(--text-2);
+}
+
+/* The file itself: the part that identifies what you are reading. */
+.fv-crumb-leaf {
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.fv-crumb-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 60;
+  display: flex;
+  min-width: 180px;
+  max-height: 320px;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 4px;
+  background: var(--elevated);
+  box-shadow: var(--shadow-popover);
+  overflow-y: auto;
+}
+
+.fv-crumb-popover .muted {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.fv-crumb-item {
+  display: flex;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11.5px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fv-crumb-item:hover:not(:disabled) {
+  background: var(--accent-quiet);
+  color: var(--text);
+}
+
+.fv-crumb-item:disabled {
+  color: var(--faint);
+  cursor: default;
+}
+
+.fv-crumb-icon {
+  width: 10px;
+  flex-shrink: 0;
+}
+
+.fv-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* ---- find ---- */
+
+.fv-find {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.fv-find .filter {
+  flex: 1;
+  min-width: 0;
+}
+
+.fv-find-count {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- code ---- */
+
+/*
+ * The viewer scrolls, never the document (§3.1 item 3, v2 §2.3).
+ * `min-width: 0` on a flex child is what actually enforces that — without it
+ * the widest line sets the pane's width and pushes the layout out.
+ */
+.fv-code {
+  min-width: 0;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+.fv-line {
+  display: flex;
+  min-height: 1.65em;
+  align-items: flex-start;
+  /* Lines are wider than the viewport when unwrapped; without this the hit
+     highlight stops at the fold rather than running the full line. */
+  width: max-content;
+  min-width: 100%;
+}
+
+.fv-code.wrap .fv-line {
+  width: auto;
+}
+
+.fv-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 44px;
+  flex-shrink: 0;
+  padding-right: 12px;
+  background: #151517;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+.fv-text {
+  flex: 1;
+  min-width: 0;
+  white-space: pre;
+}
+
+.fv-code.wrap .fv-text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.fv-line.hit {
+  background: rgb(224 175 104 / 12%);
+}
+
+.fv-line.active {
+  background: rgb(224 175 104 / 26%);
+}
+
+/* ---- typed states ---- */
+
+.fv-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 20px 4px;
+  font-size: 12px;
+}
+
+.fv-state .muted {
+  font-size: 11.5px;
+}
+
+.fv-image {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.fv-image img {
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  /* Artifacts are often screenshots on a light ground; a checker would be
+     noise, but a neutral mat keeps a transparent PNG from vanishing. */
+  background: #202023;
+}
+
+/* ============================================================
+ * Workbench layout (V2.2 shape, 2026-07-27)
+ *
+ * The workbench owns the chat and its optional bottom panel. The file viewer
+ * and file tree are full-height siblings in `.workspace-shell`, so opening a
+ * rail reduces the chat application's width structurally.
+ *
+ * Panel sizes come from inline styles (pixels, dragged and persisted), so the
+ * rules here only set structure. Anything that hardcodes a width would fight
+ * the splitter.
+ * ============================================================ */
+
+.workbench {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.workbench-upper {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+}
+
+/*
+ * The chat fills its workbench. The fixed-width rails live outside it, and
+ * `min-width: 0` lets this column shrink instead of pushing them off-screen.
+ */
+.chat-column {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.side-panel,
+.tree-column {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: #171719;
+}
+
+.tree-column {
+  border-left: 1px solid var(--border);
+}
+
+.bottom-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: #0e0f10;
+}
+
+/* Hide collapses the panel but keeps xterm mounted, preserving its renderer
+   scrollback as well as the main-process PTY. Kill removes the tab entirely. */
+.bottom-panel.hidden {
+  height: 0 !important;
+  min-height: 0;
+  border: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.panel-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---- splitters ---- */
+
+/*
+ * 1px of visible line, but a wider invisible grab area — a 1px target is
+ * unusable with a pointer. The negative margins keep the extra width from
+ * shifting the layout.
+ */
+.splitter {
+  position: relative;
+  z-index: 5;
+  flex-shrink: 0;
+  background: var(--border);
+}
+
+.splitter.vertical {
+  width: 1px;
+  cursor: col-resize;
+  margin: 0 -3px;
+  padding: 0 3px;
+  background-clip: content-box;
+}
+
+.splitter.horizontal {
+  height: 1px;
+  cursor: row-resize;
+  margin: -3px 0;
+  padding: 3px 0;
+  background-clip: content-box;
+}
+
+.splitter:hover,
+.splitter:focus-visible {
+  background-color: var(--accent);
+  outline: none;
+}
+
+/* ---- tab strips ---- */
+
+.tabstrip {
+  display: flex;
+  min-height: 34px;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.tabstrip-tabs {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabstrip-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  display: flex;
+  max-width: 200px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 12px;
+  border-right: 1px solid var(--border-soft);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: #1e1e21;
+}
+
+.tab.active {
+  background: #171719;
+  color: var(--text);
+  /* The active tab reads as continuous with the body below it. */
+  box-shadow: inset 0 -1px 0 #171719;
+}
+
+/*
+ * VS Code's preview tab. Italic is the whole signal that this tab will be
+ * replaced by the next single click, so it has to survive the active state.
+ */
+.tab.preview .tab-label {
+  font-style: italic;
+}
+
+.tab-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-close {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--faint);
+  cursor: pointer;
+  font-size: 10px;
+  /* Hidden until hover or active, so a row of tabs is not a row of ✕. */
+  opacity: 0;
+}
+
+.tab.active .tab-close,
+.tab:hover .tab-close {
+  opacity: 1;
+}
+
+.tab-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.tabstrip-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+.panel-text-action {
+  min-width: 0;
+  height: 22px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.panel-text-action:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.panel-text-action.danger:hover {
+  color: var(--error);
+}
+
+.icon-toggle {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.icon-toggle:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.icon-toggle.on {
+  background: var(--accent-quiet);
+  color: var(--accent);
+}
+
+/* ---- overrides of the pre-workbench layout ---- */
+
+/*
+ * The tree fills its column. It briefly lived inside the files pane under a
+ * `max-height: 40%`, which truncated it — the symptom that prompted this
+ * restructure.
+ */
+.tree-column .filetree-shell {
+  flex: 1;
+}
+
+.tree-column .filetree-head {
+  /* The column header is redundant with the Files toggle that opened it. */
+  display: none;
+}
+
+.side-panel .fileviewer {
+  min-height: 0;
+  flex: 1;
+  border-top: 0;
+}
+
+/* Inside a panel the tab strip is the header, so the pane drops its own. */
+.terminal-pane.embedded {
+  height: auto;
+  min-height: 0;
+  flex: 1;
+  border-top: 0;
+}
+
+.terminal-pane.embedded .terminal-host {
+  min-height: 0;
+  flex: 1;
+}
+
+/* ============================================================
+ * Topbar (2026-07-27 restructure)
+ *
+ * Was eleven text buttons at equal weight; now a thread name, three panel
+ * toggles, and an overflow. The bar should read as chrome — quiet until you
+ * look at it — so the icons sit at `--muted` and only lift on hover or when
+ * their panel is open.
+ * ============================================================ */
+
+.topbar {
+  gap: 11px;
+}
+
+/*
+ * The thread name. A button because it renames in place, but styled as text:
+ * it is the bar's label first and a control second.
+ */
+.topbar-title {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  max-width: 42vw;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.topbar-title:hover {
+  background: transparent;
+  color: var(--text);
+}
+
+.topbar-worktree {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: var(--elevated);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.topbar-context-usage {
+  flex: none;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
+  font: 400 10.5px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar-context-usage:hover {
+  color: var(--text-2);
+}
+
+.topbar-icons {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.topbar-title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- icon buttons ---- */
+
+.topbar-icon {
+  position: relative;
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.topbar-icon:hover {
+  background: var(--elevated);
+  color: var(--text);
+}
+
+.topbar-icon:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/*
+ * "On" means the panel is open. Deliberately quieter than an accent fill —
+ * three lit buttons at full accent would compete with the transcript, which is
+ * what the old bar did wrong.
+ */
+.topbar-icon.on {
+  background: var(--accent-quiet);
+  color: var(--accent);
+}
+
+.topbar-ellipsis {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.topbar-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--coral);
+  color: var(--on-coral);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 13px;
+  text-align: center;
+}
+
+.topbar-overflow {
+  position: relative;
+  display: inline-flex;
+}
+
+.topbar-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 70;
+  display: flex;
+  min-width: 218px;
+  max-height: 70vh;
+  flex-direction: column;
+  margin-top: 5px;
+  padding: 5px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--panel);
+  box-shadow: var(--shadow-control);
+}
+
+.topbar-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
+.topbar-menu > button:hover,
+.topbar-menu > button:focus-visible {
+  background: var(--row-hover);
+  color: var(--text);
+}
+
+.topbar-menu-sep {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--hairline);
+}
+
+.topbar-menu > button .badge {
+  margin-left: auto;
+}
+
+@media (max-width: 899px) {
+  .topbar-sidebar-restore {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar-worktree,
+  .topbar-context-usage {
+    display: none;
+  }
+
+  .topbar-title {
+    max-width: calc(100vw - 145px);
+  }
+}
+
+/* Inline rename. Sized to match the label it replaces, so the bar does not
+   jump when editing starts. */
+.topbar-title-input {
+  min-width: 0;
+  max-width: 42vw;
+  padding: 3px 7px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  outline: none;
+}
+
+/* ============================================================
+ * Repository UI mockups — tree and reader finish
+ * ============================================================ */
+
+.tree-column {
+  background: var(--panel);
+}
+
+.tree-column .filetree-head {
+  display: flex;
+}
+
+.filetree-head {
+  min-height: 34px;
+  padding: 0 10px;
+  border-bottom-color: var(--hairline);
+  background: var(--panel);
+  color: var(--faint);
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.filetree-head .muted {
+  max-width: 62%;
+  color: var(--faint);
+  font-size: 9px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.filetree-filter {
+  position: relative;
+  gap: 5px;
+  min-height: 38px;
+  padding: 6px 8px;
+  border-bottom-color: var(--hairline);
+}
+
+.filetree-filter-icon {
+  position: absolute;
+  left: 16px;
+  z-index: 1;
+  color: var(--faint);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.filetree-filter .filter {
+  height: 26px;
+  padding: 4px 34px 4px 26px;
+  border-color: var(--hairline);
+  border-radius: 6px;
+  background: var(--canvas);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.filetree-result-count {
+  position: absolute;
+  right: 36px;
+  color: var(--coral);
+  font: 9px var(--font-mono);
+}
+
+.filetree-filter .linkish {
+  position: absolute;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+}
+
+.filetree {
+  padding: 5px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.tree-row {
+  display: grid;
+  min-height: 24px;
+  grid-template-columns: 10px 15px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 3px;
+  padding-top: 2px;
+  padding-right: 6px;
+  padding-bottom: 2px;
+  border-radius: 6px;
+  color: var(--muted);
+  line-height: 20px;
+}
+
+.tree-row:hover {
+  background: var(--row-hover);
+}
+
+.tree-row.active {
+  background: var(--raised);
+  box-shadow: inset 2px 0 0 var(--coral);
+}
+
+.tree-caret {
+  width: 10px;
+  color: var(--faint);
+  font-size: 9px;
+}
+
+.tree-icon {
+  width: 15px;
+}
+
+.tree-icon > svg {
+  width: 13px;
+  height: 13px;
+  filter: saturate(0.35);
+  opacity: 0.78;
+}
+
+.tree-dir,
+.tree-file {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-2);
+  text-overflow: ellipsis;
+}
+
+.tree-row mark {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--coral) 18%, transparent);
+  color: var(--text);
+}
+
+.filetree-note {
+  padding: 7px 9px;
+  border-top-color: var(--hairline);
+  font-size: 9.5px;
+  line-height: 1.4;
+}
+
+.filetree-footnote {
+  flex: 0 0 auto;
+}
+
+.tree-menu,
+.fv-menu {
+  min-width: 184px;
+  padding: 4px;
+  border-color: var(--hairline);
+  border-radius: 9px;
+  background: var(--raised);
+}
+
+.tree-menu button,
+.fv-menu button {
+  min-height: 28px;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+
+.tree-menu-separator {
+  height: 1px;
+  margin: 3px 5px;
+  background: var(--hairline);
+}
+
+.fileviewer-head {
+  min-height: 34px;
+  gap: 7px;
+  padding: 0 10px;
+  border-bottom-color: var(--hairline);
+  background: var(--panel);
+  font-weight: 400;
+}
+
+.fileviewer-meta {
+  flex: 0 0 auto;
+  color: var(--faint);
+  font: 9.5px var(--font-mono);
+}
+
+.fileviewer-head .linkish {
+  padding: 3px 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.fileviewer-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  padding: 0;
+  background: var(--canvas);
+}
+
+.fv-code {
+  min-height: 0;
+  flex: 1;
+  padding: 8px 0 14px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.fv-line {
+  min-height: 1.6em;
+}
+
+.fv-gutter {
+  width: 48px;
+  padding-right: 12px;
+  background: var(--canvas);
+}
+
+.fv-find {
+  padding: 5px 8px;
+  border-bottom-color: var(--hairline);
+  background: var(--panel);
+}
+
+.fv-status {
+  display: flex;
+  min-height: 25px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 10px;
+  border-top: 1px solid var(--hairline);
+  background: var(--panel);
+  color: var(--faint);
+  font: 9px var(--font-mono);
+}
+
+:root[data-theme="light"] .side-panel,
+:root[data-theme="light"] .tree-column,
+:root[data-theme="light"] .bottom-panel {
+  background: var(--panel);
+}
+
+:root[data-theme="light"] .tabstrip {
+  background: var(--panel);
+}
+
+:root[data-theme="light"] .tab:hover {
+  background: var(--row-hover);
+}
+
+:root[data-theme="light"] .tab.active {
+  background: var(--canvas);
+  color: var(--text);
+  box-shadow: inset 0 -1px 0 var(--canvas);
+}

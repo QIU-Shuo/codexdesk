@@ -1,0 +1,30 @@
+node_modules/
+app/.vite/
+app/out/
+# Renderer build output — reproducible with `vite build`, ~10MB of it once
+# shiki's grammars are code-split.
+app/dist/
+.DS_Store
+
+# Environment files may contain credentials. Commit a documented example only.
+.env
+.env.*
+!.env.example
+
+# Apple signing/notarization credentials must never enter the repository.
+AuthKey_*.p8
+*.p12
+
+# Test output and local logs
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local tooling config — machine-specific, contains an auth token
+.claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/
+.claude/.cc-writes/

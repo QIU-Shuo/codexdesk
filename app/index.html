@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      `img-src` must name `data:` explicitly: it does not inherit from
+      `default-src 'self'`, and every image we show — file viewer, composer
+      previews, transcript attachments — is a data URL read through the main
+      process. Without it they load as broken icons with no console error
+      that names the CSP as the cause. Kept to `data:` only: no remote origin
+      is allowed to be fetched by the renderer.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+    />
+    <title>CodexDesk</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/renderer/main_window/main.tsx"></script>
+  </body>
+</html>

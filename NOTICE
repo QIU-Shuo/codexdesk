@@ -1,0 +1,40 @@
+Third-party notices for CodexDesk
+
+The repository is licensed under the MIT License except where noted below.
+
+Production npm dependency license texts, including Electron's MIT license, are
+generated from app/package-lock.json at
+THIRD_PARTY_LICENSES/npm-production-notices.txt. Electron's Chromium-derived
+notices are packaged as LICENSES.chromium.html in the application resources.
+
+The TypeScript protocol definitions in app/src/protocol/generated/ are
+generated from OpenAI Codex and remain licensed under the Apache License,
+Version 2.0. A copy of that license is provided at
+THIRD_PARTY_LICENSES/Apache-2.0.txt.
+
+OpenAI Codex: https://github.com/openai/codex
+Copyright 2025 OpenAI
+
+File and folder icons are provided by React Symbols under the MIT License.
+A copy of that license is provided at
+THIRD_PARTY_LICENSES/React-Symbols-MIT.txt.
+
+React Symbols: https://github.com/pheralb/react-symbols
+Copyright (c) 2022 Pablo Hernández
+
+The interface bundles two typefaces, both licensed under the SIL Open Font
+License, Version 1.1. Only their latin subsets are redistributed, as woff2,
+in app/src/renderer/main_window/fonts/. Copies of the licenses are provided
+at THIRD_PARTY_LICENSES/Archivo-OFL-1.1.txt and
+THIRD_PARTY_LICENSES/IBM-Plex-Mono-OFL-1.1.txt.
+
+Archivo: https://github.com/Omnibus-Type/Archivo
+Copyright 2020 The Archivo Project Authors
+
+IBM Plex Mono: https://github.com/IBM/plex
+Copyright 2017 IBM Corp.
+
+CodexDesk is an independent client for the public Codex app-server
+interface. It is not affiliated with, endorsed by, or sponsored by OpenAI.
+"Codex" and "OpenAI" are trademarks of OpenAI; they are used here only to
+identify the interface this software interoperates with.

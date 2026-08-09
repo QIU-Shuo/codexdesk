@@ -1,0 +1,81 @@
+{
+  "name": "codexdesk",
+  "productName": "CodexDesk",
+  "version": "0.1.0",
+  "description": "An independent desktop client for the Codex app-server interface. Not affiliated with or endorsed by OpenAI.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/QIU-Shuo/codexdesk.git"
+  },
+  "homepage": "https://github.com/QIU-Shuo/codexdesk#readme",
+  "bugs": {
+    "url": "https://github.com/QIU-Shuo/codexdesk/issues"
+  },
+  "main": ".vite/build/main.js",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "make:release": "CODEXDESK_RELEASE_BUILD=true electron-forge make --platform=darwin --arch=arm64",
+    "make:public-release": "CODEXDESK_RELEASE_BUILD=true CODEXDESK_PUBLIC_RELEASE=true electron-forge make --platform=darwin --arch=arm64",
+    "make:canary": "CODEXDESK_BUILD_CHANNEL=canary electron-forge make --platform=darwin --arch=arm64",
+    "notarize:release": "node tools/updates/notarize.mjs",
+    "notarize:canary": "CODEXDESK_BUILD_CHANNEL=canary node tools/updates/notarize.mjs",
+    "release:inspect": "node tools/releases/verify-candidate.mjs",
+    "release:notices": "node tools/releases/generate-third-party-notices.mjs",
+    "release:notices:check": "node tools/releases/generate-third-party-notices.mjs --check",
+    "release:sbom": "node tools/releases/generate-sbom.mjs",
+    "release:audit": "npm audit --omit=dev && node tools/releases/audit-build-dependencies.mjs",
+    "release:verify": "npm run verify && npm run release:audit && npm run release:notices:check",
+    "update:publish-local": "node tools/updates/publish-local.mjs",
+    "update:prepare-release": "node tools/updates/prepare-release.mjs",
+    "update:serve-local": "node tools/updates/serve-local.mjs",
+    "tsc": "tsc --noEmit",
+    "tsc:test": "tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "vitest run --config vitest.live.config.mts",
+    "architecture:check": "node tools/architecture/check-boundaries.mjs",
+    "verify": "npm run architecture:check && npm run tsc && npm run tsc:test && npm test",
+    "protocol:generate": "codex app-server generate-ts --out src/protocol/generated",
+    "rebuild": "electron-rebuild -f -w node-pty"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-vite": "^7.11.1",
+    "@electron/asar": "^3.4.1",
+    "@electron/rebuild": "^4.2.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^6.0.1",
+    "electron": "43.2.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.3",
+    "vitest": "^4.1.1",
+    "ws": "^8.21.1"
+  },
+  "dependencies": {
+    "@react-symbols/icons": "^1.4.1",
+    "@tanstack/react-virtual": "^3.14.6",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "node-pty": "^1.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "shiki": "^4.3.1"
+  },
+  "overrides": {
+    "tar": "7.5.22",
+    "tmp": "0.2.7"
+  }
+}

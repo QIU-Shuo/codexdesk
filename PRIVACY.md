@@ -39,7 +39,7 @@ Electron's application-data directory. On a fresh macOS install this is:
 ~/Library/Application Support/CodexDesk
 ```
 
-An installation migrated from the former Occo preview may continue using
+An installation migrated from the former Occo build may continue using
 `~/Library/Application Support/occo-desktop` so existing settings are not lost.
 The managed runtime is stored below that application-data directory under
 `runtime/codex/releases/<version>`. It is executable code supplied by OpenAI,

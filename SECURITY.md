@@ -2,8 +2,8 @@
 
 ## Supported versions
 
-CodexDesk is an early preview. Security fixes are provided only for the latest
-0.1.x preview and the latest `main` branch.
+Security fixes are provided for the latest 0.1.x release and the latest `main`
+branch.
 
 ## Managed Codex runtime
 

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
+import { createReadStream } from "node:fs";
 import {
   access,
   chmod,
@@ -165,10 +166,10 @@ export class ManagedCodexRuntime {
 
   private unsupportedReason(): string | null {
     if (this.dependencies.platform !== "darwin") {
-      return "This CodexDesk preview currently supports macOS only.";
+      return "CodexDesk currently supports macOS only.";
     }
     if (this.dependencies.arch !== "arm64") {
-      return "This CodexDesk preview currently supports Apple-silicon Macs only.";
+      return "CodexDesk currently supports Apple-silicon Macs only.";
     }
     return null;
   }
@@ -329,12 +330,7 @@ async function downloadFile(
 
 async function assertSha256(file: string, expected: string): Promise<void> {
   const hash = createHash("sha256");
-  const handle = await open(file, "r");
-  try {
-    for await (const chunk of handle.readableWebStream()) hash.update(chunk);
-  } finally {
-    await handle.close();
-  }
+  for await (const chunk of createReadStream(file)) hash.update(chunk);
   const actual = hash.digest("hex");
   if (actual !== expected) {
     throw new Error(`SHA-256 verification failed for ${path.basename(file)}.`);

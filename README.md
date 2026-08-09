@@ -7,8 +7,7 @@ in one local Electron workspace.
 ![CodexDesk new chat screen](assets/codexdesk.png)
 
 > [!IMPORTANT]
-> CodexDesk is an early preview. Its packaged release configuration is
-> macOS-first.
+> CodexDesk currently ships for Apple-silicon macOS.
 
 ## Highlights
 
@@ -25,7 +24,7 @@ in one local Electron workspace.
 - Keep privileged operations in Electron's main process behind a narrow preload
   API; the renderer has no direct Node.js access.
 
-## Install the preview
+## Install
 
 Download the Apple-silicon `.dmg` from the
 [GitHub Releases page](https://github.com/QIU-Shuo/codexdesk/releases), open it,
@@ -52,7 +51,7 @@ stdio JSON-RPC. CodexDesk and other Codex clients may still share the normal
 `~/.codex` account, configuration, plugin, and conversation data.
 
 See [Privacy](PRIVACY.md), [Support](SUPPORT.md), and the
-[Security policy](SECURITY.md) before using the preview with sensitive source
+[Security policy](SECURITY.md) before using CodexDesk with sensitive source
 code.
 
 ## Run from source
@@ -81,7 +80,7 @@ npm run package  # build an unpacked application bundle
 npm run make     # create the configured distributable
 ```
 
-Changes in the first preview are summarized in the
+Changes in the first release are summarized in the
 [CodexDesk 0.1.0 release notes](RELEASE_NOTES.md).
 
 The committed protocol bindings were generated with Codex CLI 0.144.4. When
@@ -116,7 +115,7 @@ opening a public exploit report.
 ## Project status
 
 CodexDesk has a permanent macOS bundle identifier, Developer ID signing and
-notarization, and a maintainer-controlled release workflow. The initial preview
+notarization, and a maintainer-controlled release workflow. The initial release
 target is macOS arm64 and ships as a DMG, with a ZIP retained for automatic
 updates. Source builds and packaged development builds are also supported.
 

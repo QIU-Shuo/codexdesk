@@ -1,6 +1,6 @@
 # Support
 
-CodexDesk is an early, community-supported preview.
+CodexDesk is a community-supported project.
 
 Before opening an issue:
 

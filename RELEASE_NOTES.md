@@ -1,6 +1,6 @@
 # CodexDesk 0.1.0 release notes
 
-CodexDesk 0.1.0 is the first macOS arm64 preview of the local desktop client for
+CodexDesk 0.1.0 is the first macOS arm64 release of the local desktop client for
 the Codex app-server interface.
 
 ## Highlights
@@ -16,7 +16,7 @@ the Codex app-server interface.
 - Mention files with `@`, invoke supported composer actions with `/`, and keep
   drafts and layout state across restarts.
 - Review the documented local-data, filesystem, terminal, and update behavior
-  before using the preview with sensitive repositories.
+  before using CodexDesk with sensitive repositories.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ On first launch, CodexDesk downloads its pinned Codex 0.144.4 runtime directly
 from OpenAI (about 111 MB), verifies its checksum and OpenAI signature, and
 keeps it separate from any system Codex installation.
 
-## Preview limitations
+## Current limitations
 
 - x64 and universal macOS builds are not yet tested release targets.
 - CodexDesk does not bundle Codex or provide an additional sandbox. First

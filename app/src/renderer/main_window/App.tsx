@@ -643,18 +643,18 @@ export function App() {
   }, [draft, activeThreadId, newChatDraft]);
 
   const beginNewChat = useCallback(
-    (context?: { cwd?: string; projectId?: string | null }) => {
+    async (context?: { cwd?: string; projectId?: string | null }) => {
       const activeEntry = threads.find(
         (thread) => thread.threadId === activeThreadId,
       );
-      const inheritedProjectId =
+      let inheritedProjectId =
         context?.projectId !== undefined
           ? context.projectId
           : (activeEntry?.projectId ?? activeProjectId);
-      const inheritedProject = projects.find(
+      let inheritedProject = projects.find(
         (project) => project.id === inheritedProjectId,
       );
-      const inheritedCwd =
+      let inheritedCwd =
         context?.cwd ??
         (activeEntry?.worktreePath
           ? inheritedProject?.activeRoot
@@ -662,6 +662,21 @@ export function App() {
         inheritedProject?.activeRoot ??
         view?.cwd ??
         cwd;
+      // A pristine profile has no cwd to inherit. New chat is the primary
+      // first-run action, so use it to establish the initial project instead
+      // of leaving both New chat buttons looking clickable but inert.
+      if (!inheritedCwd) {
+        const selectedRoot = await window.codexDesk.selectWorkspace();
+        if (!selectedRoot) return;
+        const next = await window.codexDesk.getSnapshot();
+        setProjects(next.projects);
+        setActiveProjectId(next.activeProjectId);
+        inheritedProject = next.projects.find((project) =>
+          project.roots.includes(selectedRoot),
+        );
+        inheritedProjectId = inheritedProject?.id ?? null;
+        inheritedCwd = selectedRoot;
+      }
       if (!inheritedCwd) return;
 
       setNewChatDraft({

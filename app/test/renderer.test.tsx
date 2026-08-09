@@ -131,6 +131,7 @@ const calls = {
   termClosed: [] as string[],
   notifyModes: [] as string[],
   loggedOut: 0,
+  workspaceSelections: 0,
 };
 /** Swapped per test; the bridge closes over it. */
 let usageFixture: unknown = null;
@@ -140,6 +141,8 @@ let newThreadResult: string | null = "new-thread";
 let activateNewThreadOnCreate = false;
 let fileSearchFixture: FuzzyFileSearchResult[] = [];
 let attachmentResults: boolean[] = [];
+let selectWorkspaceResult: string | null = null;
+let snapshotAfterWorkspaceSelection: Snapshot | null = null;
 
 function installBridge(snap: Snapshot) {
   savedDrafts.length = 0;
@@ -148,8 +151,11 @@ function installBridge(snap: Snapshot) {
       emit = cb;
       return () => {};
     },
-    getSnapshot: async () => snap,
-    selectWorkspace: async () => null,
+    getSnapshot: async () => snapshotAfterWorkspaceSelection ?? snap,
+    selectWorkspace: async () => {
+      calls.workspaceSelections += 1;
+      return selectWorkspaceResult;
+    },
     setWorkspace: async () => null,
     readGitBranches: async (cwd: string) => ({
       root: cwd,
@@ -314,6 +320,7 @@ afterEach(() => {
   calls.termClosed.length = 0;
   calls.notifyModes.length = 0;
   calls.loggedOut = 0;
+  calls.workspaceSelections = 0;
   calls.redeemed = 0;
   usageFixture = null;
   readDirFixture = [];
@@ -322,6 +329,8 @@ afterEach(() => {
   activateNewThreadOnCreate = false;
   fileSearchFixture = [];
   attachmentResults = [];
+  selectWorkspaceResult = null;
+  snapshotAfterWorkspaceSelection = null;
   localStorage.clear();
 });
 
@@ -341,6 +350,34 @@ describe("composer send/stop button", () => {
       ta.dispatchEvent(new Event("input", { bubbles: true }));
     });
   };
+
+  it("opens the folder picker when a pristine profile starts a new chat", async () => {
+    installBridge(snapshot({ cwd: null }));
+    render(<App />);
+    await act(async () => {});
+
+    const project = {
+      id: "p1",
+      name: "CodexDesk",
+      roots: ["/repo"],
+      activeRoot: "/repo",
+    };
+    selectWorkspaceResult = "/repo";
+    snapshotAfterWorkspaceSelection = snapshot({
+      cwd: "/repo",
+      projects: [project],
+      activeProjectId: "p1",
+    });
+
+    await act(async () =>
+      screen.getAllByRole("button", { name: "New chat" })[0]!.click(),
+    );
+
+    expect(calls.workspaceSelections).toBe(1);
+    expect(
+      document.querySelector(".composer textarea")?.getAttribute("placeholder"),
+    ).toBe("Describe a task, or paste an error…");
+  });
 
   it("idle + empty → disabled Send", async () => {
     installBridge(snapshot({ activeThreadId: "A", view: view("A", "") }));
